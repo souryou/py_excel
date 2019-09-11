@@ -6,7 +6,6 @@ from tkinter.ttk import *
 from tkinter import messagebox
 
 title = "窗口标题"
-
 window=tk.Tk()
 window.title(title)
 window.geometry("600x300")
@@ -56,6 +55,9 @@ lprogress = tk.Label(window, text="进度:").place(x=0, y=275, width=28, height=
 ppg = Progressbar(window, length=560, mode="determinate", orient="horizontal")
 ppg.place(x=36, y=275)
 ppg["value"] = 0
+ppg["variable"]="hello"
+
+
 
 def pg(cur):
 	ppg["value"] = cur
@@ -104,7 +106,6 @@ def isOk():
 
 	return True
 
-#root.withdraw()
 def filePath():
 	fn = filedialog.askopenfilename()
 	e.delete(0, tk.END)
@@ -120,10 +121,12 @@ def go():
 	window.update()
 	if isOk():
 		buttonGo["state"]="disabled"
+		messagebox.showinfo("提示", "处理中...")
 		nn = fpath[0:fpath.rindex('.')]+"_new"+fpath[fpath.rindex('.'):]
 		dwb = xl.Workbook()
 		wb = xl.load_workbook(fpath, data_only=True)
 		wb.guess_types = True
+
 		ws = wb.get_sheet_by_name(sn)
 		
 		dws = dwb.active
@@ -133,25 +136,33 @@ def go():
 		colums = ws.max_column+1
 
 		ppg["maximum"] = rows - 1
-		ncolumn = len(nline)+1
 
+		ncolumn = len(nline)+1
+		noFind = []
 		nindex=[]
 		for ni in nsearch:
 			for i in range(1, colums):
 				if ws.cell(sr, i).value == ni:
 					nindex.append(i)
 					break
-		
-		for nw in range(1, ncolumn):
-			dws.cell(1, nw).value= nline[nw-1]
+				elif (i+1)==colums:
+					noFind.append(ni)
+					
+		if len(noFind)==0:	
+			for nw in range(1, ncolumn):
+				dws.cell(1, nw).value= nline[nw-1]
 
-		for r in range(2, rows):
-			for c in range(1, ncolumn):
-				dws.cell(row=r, column=c).value = ws.cell(row=sr+r-1, column=nindex[c-1]).value
-				pg(r)
+			for r in range(2, rows):
+				for c in range(1, ncolumn):
+					dws.cell(row=r, column=c).value = ws.cell(row=sr+r-1, column=nindex[c-1]).value
+					pg(r)
 
-		dwb.save(nn)
-		messagebox.showinfo("提示", "恭喜，处理完成！")
+			dwb.save(nn)
+			messagebox.showinfo("提示", "恭喜，处理完成！")
+			buttonGo["state"]="active"
+		else:
+			messagebox.showwarning("错误", "没有找到如下表头：\n"+str(noFind))
+			buttonGo["state"]="active"
 
 buttonGo=tk.Button(text="去吧，皮卡丘~", command=go)
 buttonGo.place(x=300, y=36, width=300, height=35)
